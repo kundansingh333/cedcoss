@@ -1,27 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { fetchAnalytics } from '../services/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { fetchAnalytics, fetchReviews } from '../services/api';
 import SummaryCards from './SummaryCards';
 import SentimentChart from './SentimentChart';
 import ComplaintsChart from './ComplaintsChart';
 import PraisesChart from './PraisesChart';
 import FileUpload from './FileUpload';
-import { Sparkles, RefreshCw, Layers } from 'lucide-react';
+import Filters from './Filters';
+import ReviewTable from './ReviewTable';
+import { Sparkles, RefreshCw } from 'lucide-react';
 
 const Dashboard = () => {
+  // Analytics State
   const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState('all');
   const [error, setError] = useState(null);
 
-  const loadDashboardData = async (isManualRefresh = false) => {
-    if (isManualRefresh) setRefreshing(true);
-    else setLoading(true);
+  // Reviews & Filtering State
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalReviews: 0,
+    limit: 10,
+  });
+
+  const [filters, setFilters] = useState({
+    search: '',
+    product: 'all',
+    sentiment: 'all',
+    topic: 'all',
+    needsReply: 'all',
+    mismatch: 'all',
+    page: 1,
+  });
+
+  // 1. Fetch High-Level Analytics
+  const loadAnalytics = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    else setLoadingAnalytics(true);
     setError(null);
 
     try {
       const response = await fetchAnalytics({
-        product: selectedProduct !== 'all' ? selectedProduct : undefined,
+        product: filters.product !== 'all' ? filters.product : undefined,
       });
 
       if (response && response.success) {
@@ -31,17 +54,79 @@ const Dashboard = () => {
       console.error('Error fetching analytics:', err);
       setError(err.message || 'Failed to load dashboard metrics.');
     } finally {
-      setLoading(false);
+      setLoadingAnalytics(false);
       setRefreshing(false);
     }
   };
 
+  // 2. Fetch Filtered Reviews Table
+  const loadReviews = useCallback(async () => {
+    setLoadingReviews(true);
+    try {
+      const params = {
+        page: filters.page,
+        limit: 10,
+        search: filters.search.trim() || undefined,
+        product: filters.product !== 'all' ? filters.product : undefined,
+        sentiment: filters.sentiment !== 'all' ? filters.sentiment : undefined,
+        topic: filters.topic !== 'all' ? filters.topic : undefined,
+        needsReply: filters.needsReply !== 'all' ? filters.needsReply : undefined,
+        mismatch: filters.mismatch !== 'all' ? filters.mismatch : undefined,
+      };
+
+      const response = await fetchReviews(params);
+      if (response && response.success) {
+        setReviews(response.reviews);
+        setPagination(response.pagination);
+      }
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, [filters]);
+
+  // Load analytics when product filter changes
   useEffect(() => {
-    loadDashboardData();
-  }, [selectedProduct]);
+    loadAnalytics();
+  }, [filters.product]);
+
+  // Load reviews when any filter or page changes
+  useEffect(() => {
+    loadReviews();
+  }, [loadReviews]);
+
+  // Handle filter changes with page reset
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      page: 1, // Reset to first page on filter change
+    }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      product: 'all',
+      sentiment: 'all',
+      topic: 'all',
+      needsReply: 'all',
+      mismatch: 'all',
+      page: 1,
+    });
+  };
+
+  const handlePageChange = (newPage) => {
+    setFilters((prev) => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
 
   const handleUploadSuccess = () => {
-    loadDashboardData(true);
+    loadAnalytics(true);
+    loadReviews();
   };
 
   return (
@@ -63,33 +148,17 @@ const Dashboard = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Product Filter for Dashboard */}
-          {analytics?.filterOptions?.products && analytics.filterOptions.products.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500 hidden md:inline">Product:</span>
-              <select
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                className="bg-white border border-gray-300 text-gray-800 text-xs rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Products ({analytics.summary.totalReviews})</option>
-                {analytics.filterOptions.products.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <button
-            onClick={() => loadDashboardData(true)}
-            disabled={refreshing || loading}
+            onClick={() => {
+              loadAnalytics(true);
+              loadReviews();
+            }}
+            disabled={refreshing || loadingAnalytics}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50"
             title="Refresh dashboard metrics"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-blue-600' : ''}`} />
-            <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            <span>{refreshing ? 'Refreshing...' : 'Refresh All'}</span>
           </button>
         </div>
       </div>
@@ -102,7 +171,7 @@ const Dashboard = () => {
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex justify-between items-center">
           <span>{error}</span>
           <button
-            onClick={() => loadDashboardData()}
+            onClick={() => loadAnalytics()}
             className="underline font-semibold hover:text-rose-950"
           >
             Try Again
@@ -133,6 +202,25 @@ const Dashboard = () => {
           <PraisesChart praises={analytics?.topPraises || []} />
         </div>
       </div>
+
+      {/* Filters Bar */}
+      <Filters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onResetFilters={handleResetFilters}
+        products={analytics?.filterOptions?.products || []}
+        sentiments={analytics?.filterOptions?.sentiments || []}
+        topics={analytics?.filterOptions?.topics || []}
+        totalResults={pagination.totalReviews}
+      />
+
+      {/* Filterable Review Table */}
+      <ReviewTable
+        reviews={reviews}
+        loading={loadingReviews}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };
