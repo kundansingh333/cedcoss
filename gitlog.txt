@@ -1,0 +1,203 @@
+commit 25822adde6f908c9d7601e54c9a54353d517f7c1
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 20:57:36 2026 +0530
+
+    docs: add comprehensive README, docker compose orchestration, and container files
+
+commit d761cc61024e87d7850150b195b614c4c710fc85
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 16:15:19 2026 +0530
+
+    feat(phase-13): implement on-demand suggested replies with Gemini and interactive modal
+
+commit d37168fc162c4da007fa13f0e5e1326e05a9b427
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 15:38:14 2026 +0530
+
+    feat: phase 12 - multi-parameter filters and responsive review table
+    
+    - Implemented Filters component:
+      - Full-text search with instant clear button
+      - Dropdowns for Product, Sentiment, Topic, Needs Reply, and Rating Mismatch
+      - Reset filters button reverting to initial state
+      - Real-time result counter
+    - Implemented ReviewTable component:
+      - Displays all 8 required columns: Review ID, Product, Rating, Review Text, Sentiment, Topics, AI Summary, Needs Reply
+      - Star ratings rendering with Unknown badge for missing/invalid scores
+      - Color-coded badges for Sentiment (emerald/rose/gray) and Needs Reply (amber/gray)
+      - Duplicate tag showing duplicateOf reference
+      - Rating-sentiment mismatch alert tag
+      - Bounded pagination bar (Previous, Next, Page X of Y, Total records)
+      - Empty state and loading skeleton rows
+    - Integrated Filters and ReviewTable into Dashboard with reactive data fetching
+    - Verified clean Vite build in 502ms
+
+commit 72af0fe63167b87589b7c436651f726ef27ea1cf
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 15:17:17 2026 +0530
+
+    feat: phase 11 - React dashboard with summary cards and Recharts visualisations
+    
+    - Implemented SummaryCards component displaying:
+      - Total reviews analysed
+      - Positive %, Neutral %, and Negative % progress indicators
+      - Reviews requiring customer replies badge
+      - Bonus #2: Rating-sentiment agreement %
+      - Bonus #4: Live SHA-256 cache telemetry engine banner
+    - Built Recharts interactive SentimentChart (Donut/Pie with emerald/gray/rose palette)
+    - Built Recharts ComplaintsChart (Top 3 customer complaints in negative reviews)
+    - Built Recharts PraisesChart (Top 3 customer praises in positive reviews)
+    - Implemented FileUpload component with drag-and-drop, progress bar, and instant telemetry feedback
+    - Wired master Dashboard layout with auto-refresh and product selection
+    - Configured @tailwindcss/postcss and verified 100% clean production build in 865ms
+
+commit 506e9580c745b346e6aa17859a54536ecf0846ff
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 14:53:54 2026 +0530
+
+    feat: phase 10 - dashboard aggregation APIs and reviews query engine
+    
+    - Implemented GET /api/analytics with MongoDB aggregation pipelines:
+      - Summary cards: totalReviews, positive%, neutral%, negative%, needsReplyCount
+      - Visualizations: sentimentDistribution array, top 3 complaints ( topics), top 3 praises
+      - Bonus #2: Rating-sentiment agreement percentage
+      - Bonus #3: Individual product analytics page endpoint (GET /api/analytics/products/:productName)
+      - Bonus #4: AI call and cache telemetry stats
+    - Implemented GET /api/reviews with multi-parameter filtering:
+      - Filtering by product, sentiment, topic, needsReply, and rating mismatch
+      - Full-text search across reviewText, product, reviewId, and summary
+      - Bounded pagination metadata (totalPages, currentPage, hasNextPage, hasPrevPage)
+    - Created test-analytics-reviews.js verifying all aggregation formulas and filter combinations
+
+commit 696a2f4602b2d5ad5adbee0dfb8756d769297b49
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 14:34:43 2026 +0530
+
+    feat: phase 9 - hash-based caching engine and pipeline integration
+    
+    - Implemented cacheManager service with O(1) SHA-256 textHash lookups
+    - Built checkBatchCache() for bulk database lookup & hitCount incrementation
+    - Implemented bulkStoreInCache() using MongoDB bulkWrite operations
+    - Integrated caching into full upload pipeline:
+      CSV -> Clean -> Dedup -> Cache Check -> Batch AI (misses only) -> Cache Store -> Persist
+    - Proved 100% cache hit and 0 AI calls on warm re-upload
+    - Wired Bonus Feature #1 (rating-sentiment mismatch detection)
+    - Wired Bonus Feature #4 (AI call & cache usage statistics)
+    - Created test-caching.js verifying cold vs warm uploads and telemetry
+
+commit 3e6a228ee8ddbae8b14c9e44332379ff9638f394
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 00:56:16 2026 +0530
+
+    feat: phase 8 - batch processing and exponential backoff engine
+    
+    - Implemented processInBatches() enforcing strict batch size of 5 reviews
+    - Guaranteed maximum 5 concurrent in-flight requests (bounded concurrency)
+    - Built calculateBackoffDelay() with exponential doubling (1s -> 2s -> 4s) and jitter
+    - Implemented isRetryableError() targeting HTTP 429, 5xx server errors, and ETIMEDOUT
+    - Created comprehensive test-batch-processor.js verifying chunking, concurrency ceiling, backoff recovery, and execution metrics
+
+commit 1d9ebb8057ea61fd67ac5213839aa7f35065bffd
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 00:52:44 2026 +0530
+
+    feat: configure gemini-3.8-flash for live structured review analysis
+    
+    - Configured gemini-3.8-flash as the active production model
+    - Verified live API key authentication and structured schema response
+    - Preserved .env security via .gitignore
+
+commit 53596104ebd31b19c18929b39ef23a3a3e4abc28
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 00:43:50 2026 +0530
+
+    feat: phase 7 - AI response schema validation and retry controller
+    
+    - Implemented validateAIResponse() to validate sentiment, topics, summary, and needs_reply
+    - Built strict rejection rules for malformed JSON, unsupported sentiments, and unapproved topics
+    - Created analyzeWithValidationAndRetry() with single retry on schema validation failure
+    - Implemented crash-proof failure handling marking reviews as analysis_failed with reason
+    - Created test-validator.js verifying 7 test cases including single retry and double failure
+
+commit 06ee04052d84ac78f2bc60fb4d72a25d91c16bb6
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 00:40:24 2026 +0530
+
+    feat: phase 6 - Google Gemini AI integration and prompt injection defense
+    
+    - Integrated modern @google/genai SDK with gemini-2.5-flash model
+    - Implemented structured JSON schema enforcing sentiment, topics, summary, and needs_reply
+    - Built prompt sandboxing with <review_data> delimiters to treat reviews strictly as untrusted data
+    - Implemented robust prompt-injection defense guarding against malicious reviews like R012
+    - Added simulated analysis fallback enabling offline verification and reliable local testing
+    - Created test-gemini.js verifying prompt sandboxing, R012 defense, Hinglish, and schema compliance
+
+commit 2ffa327c13f50a87004c448a03ebd180af6b8734
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 00:24:12 2026 +0530
+
+    feat: phase 5 - data cleaning and duplicate detection service
+    
+    - Implemented dataCleaner service: cleanRating() handles missing/invalid scores (converted to 'unknown')
+    - Built normalizeText() with Unicode regex supporting English, Hinglish, emojis, and Devanagari Hindi
+    - Added deterministic SHA-256 hash generation for fast deduplication and cache indexing
+    - Built deduplicator service: tracks intra-batch and cross-batch duplicates via duplicateOf pointer
+    - Integrated cleaning and deduplication into POST /api/upload with batch persistence to MongoDB
+    - Created comprehensive test-cleaner-dedup.js verifying R006->R001 and R009->R004 duplicate detection
+
+commit 53bbc5a308e0aca2536e38cfdfbfa9e6007220f3
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sun Nov 22 00:10:51 2026 +0530
+
+    feat: phase 4 - CSV upload and streaming parser
+    
+    - Configured Multer middleware with 5MB file limit, extension check, and MIME type validation
+    - Implemented streaming CSV parser service (csv-parser) with BOM stripping and header normalization
+    - Created POST /api/upload endpoint with uploadBatchId generation and automatic file cleanup
+    - Added sample_reviews.csv containing realistic test data, missing ratings, Hindi/Hinglish, and prompt injection
+    - Created automated test-upload.js verifying valid upload, non-CSV rejection, empty payload, and file cleanup
+
+commit 1f11f070694ee0c3d157d6064131cf8a3d2fa0b7
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sat Nov 21 23:55:22 2026 +0530
+
+    feat: phase 3 - MongoDB connection and Mongoose data models
+    
+    - Configured robust MongoDB connection manager with timeout and disconnect helper
+    - Implemented Review model with strict enums (ALLOWED_SENTIMENTS, ALLOWED_TOPICS)
+    - Added fields for normalizedText, SHA-256 textHash, deduplication tracking, and bonus mismatch detection
+    - Implemented Cache model with unique SHA-256 textHash index and hit counter
+    - Added compound indexes on Review collection for fast dashboard aggregations
+    - Connected MongoDB to Express server startup with health check status
+    - Created test-db.js verification script and validated all schema constraints
+
+commit e5d9e6af2134e8b764f9975c1792db74dbb01e40
+Author: Kundan Kumar Singh <kundansingh333@users.noreply.github.com>
+Date:   Sat Nov 21 23:42:06 2026 +0530
+
+    feat: initial project setup - ReviewLens AI Review Insights
+    
+    Phase 2: Frontend and Backend scaffolding
+    
+    Backend (Express.js):
+    - Express server with CORS, JSON parsing, error handling
+    - Health check endpoint (GET /api/health)
+    - MongoDB connection config (Mongoose)
+    - Placeholder routes for upload, reviews, analytics, reply
+    - Centralized constants (allowed sentiments, topics, batch size)
+    - Multer uploads directory
+    - Environment variable setup with dotenv
+    
+    Frontend (React + Vite):
+    - Vite dev server with API proxy to backend
+    - Tailwind CSS configuration with custom brand colors
+    - Landing page with backend health check indicator
+    - Centralized Axios API client with response interceptors
+    - React Router ready structure
+    
+    Configuration:
+    - .env.example with all required environment variables
+    - .gitignore (node_modules, .env, dist, IDE files)
+    - Monorepo structure: client/ + server/
+    
+    Tech Stack: React, Vite, Tailwind CSS, Express, MongoDB, Mongoose
