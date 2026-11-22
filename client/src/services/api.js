@@ -41,8 +41,10 @@ export const fetchProductAnalytics = (productName) => {
   return api.get(`/analytics/products/${encodeURIComponent(productName)}`);
 };
 
-export const generateSuggestedReply = (reviewId) => {
-  return api.post(`/reply/${reviewId}/reply`);
+export const generateSuggestedReply = (reviewId, force = false) => {
+  return api.post(`/reply/${reviewId}/reply`, null, {
+    params: force ? { force: true } : {},
+  });
 };
 
 export default api;

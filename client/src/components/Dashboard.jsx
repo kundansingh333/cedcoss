@@ -7,6 +7,7 @@ import PraisesChart from './PraisesChart';
 import FileUpload from './FileUpload';
 import Filters from './Filters';
 import ReviewTable from './ReviewTable';
+import SuggestedReplyModal from './SuggestedReplyModal';
 import { Sparkles, RefreshCw } from 'lucide-react';
 
 const Dashboard = () => {
@@ -15,6 +16,10 @@ const Dashboard = () => {
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Suggested Reply Modal State (Phase 13)
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedReviewForReply, setSelectedReviewForReply] = useState(null);
 
   // Reviews & Filtering State
   const [reviews, setReviews] = useState([]);
@@ -129,6 +134,31 @@ const Dashboard = () => {
     loadReviews();
   };
 
+  const handleOpenReplyModal = (review) => {
+    setSelectedReviewForReply(review);
+    setReplyModalOpen(true);
+  };
+
+  const handleCloseReplyModal = () => {
+    setReplyModalOpen(false);
+    setSelectedReviewForReply(null);
+  };
+
+  const handleReplyUpdated = (targetId, newReply, generatedAt) => {
+    setReviews((prevReviews) =>
+      prevReviews.map((r) => {
+        if (r.reviewId === targetId || r._id === targetId) {
+          return {
+            ...r,
+            suggestedReply: newReply,
+            replyGeneratedAt: generatedAt,
+          };
+        }
+        return r;
+      })
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header / Bar */}
@@ -220,6 +250,15 @@ const Dashboard = () => {
         loading={loadingReviews}
         pagination={pagination}
         onPageChange={handlePageChange}
+        onGenerateReply={handleOpenReplyModal}
+      />
+
+      {/* On-Demand Suggested Reply Modal (Phase 13) */}
+      <SuggestedReplyModal
+        isOpen={replyModalOpen}
+        onClose={handleCloseReplyModal}
+        review={selectedReviewForReply}
+        onReplyUpdated={handleReplyUpdated}
       />
     </div>
   );
