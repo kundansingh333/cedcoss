@@ -1,30 +1,48 @@
 /**
- * api.js - Axios client for backend API calls
- *
- * Why a centralized API service?
- * - Single place to configure base URL, headers, interceptors
- * - All components import from here instead of repeating fetch/axios setup
- * - Easy to add auth headers, error handling, or logging later
+ * api.js - Centralized API Service for ReviewLens
  */
 
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api', // Vite proxy forwards /api/* to localhost:5000
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: '/api',
 });
 
-// Response interceptor: unwrap data or handle errors globally
 api.interceptors.response.use(
-  (response) => response.data, // Return just the data, not the full Axios response
+  (response) => response.data,
   (error) => {
     const message =
-      error.response?.data?.message || error.message || 'Something went wrong';
-    console.error('API Error:', message);
+      error.response?.data?.message || error.response?.data?.error || error.message || 'Something went wrong';
     return Promise.reject(new Error(message));
   }
 );
+
+export const uploadCSV = (file, onUploadProgress) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return api.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress,
+  });
+};
+
+export const fetchAnalytics = (params = {}) => {
+  return api.get('/analytics', { params });
+};
+
+export const fetchReviews = (params = {}) => {
+  return api.get('/reviews', { params });
+};
+
+export const fetchProductAnalytics = (productName) => {
+  return api.get(`/analytics/products/${encodeURIComponent(productName)}`);
+};
+
+export const generateSuggestedReply = (reviewId) => {
+  return api.post(`/reply/${reviewId}/reply`);
+};
 
 export default api;
